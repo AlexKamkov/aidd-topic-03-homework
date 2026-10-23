@@ -113,21 +113,26 @@ py -3.13 manage.py test
 
 ## Second-agent comparison status
 
-Kilo Code was attempted as the second agent, but its API Gateway returned
-**HTTP 403**. It did not perform the assignment, and there is no Kilo Code
-implementation, analysis, test result, or branch to compare. This report does
-not claim a two-agent comparison. The outcome is recorded from the task
-execution information; no Kilo Code output artifact is available in this
-workspace.
+Kilo Code was initially attempted as the second agent, but its API Gateway returned HTTP 403 and it did not complete the assignment. Koda was subsequently used successfully as the second independent coding agent in a separate checkout and branch.
+
+Koda implemented a virtual investment portfolio with portfolio transactions, position summaries, and realized-profit calculations. Its work is documented in `ANALYSIS_KODA.md` and `AGENT_REPORT_KODA.md` in the Koda checkout.
+
+The Koda test suite was independently run from the terminal with `py -3.13 manage.py test dashboard`: all 100 tests passed. The output included a warning that the Tinkoff SDK was unavailable and synthetic market data was used. Live market integration and HTTP endpoint behavior were not fully verified.
+
+The two agents implemented different features:
+- Copilot: persisted share-price history, period-based graph, and price-history API.
+- Koda: virtual investment portfolio with purchase and sale transactions, cost and market-value summaries, and realized-profit calculations.
+
+The Copilot work is committed and pushed on branch `agent/copilot`. The Koda work is committed and pushed on branch `agent/koda`; commit `a0f55a6`.
 
 ## Remaining assignment requirements and evidence
 
-| Assignment requirement | Status | Exact evidence and remaining work |
+| Assignment requirement | Status | Evidence and remaining work |
 |---|---|---|
-| 1. Analyze the application architecture and code. | Completed for this checkout. | [ANALYSIS.md](ANALYSIS.md) documents the stack, components, request flow, data model, persistence, and source references. |
-| 2. Recover numbered, source-supported functional requirements and ambiguities. | Completed for this checkout. | [ANALYSIS.md](ANALYSIS.md) separates recovered original requirements from the added feature and documents defects/ambiguities. |
-| 3. Audit dependencies, fix compatibility defects, refactor, and verify the app. | Partially verified. | `manage.py check`, migration consistency, tests, and SQLite HTTP 200 smoke test passed (results above). Full `pip install -r requirements.txt`, Tinkoff integration, and PostgreSQL/Redis/Celery operation remain unverified; pip could not resolve the pinned `tinkoff-investments==0.2.0b50`, and Docker Engine was unavailable. |
-| 4. Implement and test one permitted new feature. | Implemented and locally tested. | Price history model/migration, quote task persistence, selectable-period graph and API are in [dashboard/models.py](dashboard/models.py), [dashboard/migrations/0008_pricehistory.py](dashboard/migrations/0008_pricehistory.py), [dashboard/tasks.py](dashboard/tasks.py), [dashboard/services/graph.py](dashboard/services/graph.py), [dashboard/api/v1/views.py](dashboard/api/v1/views.py), and [dashboard/tests.py](dashboard/tests.py). Seventeen tests passed; live quote ingestion could not be tested without the SDK and token. |
-| 5. Compare results from two agents. | Not completed. | Kilo Code's attempted run returned HTTP 403 and produced no work to compare. No second implementation, verified second-agent results, or comparative table exists. |
-| Use separate agent runs/copies/branches and submit the resulting branches. | Not completed in this checkout. | The worktree is on `agent/copilot`; only this checkout's changes are present. No Kilo Code result branch or separate copy exists, and no fork/branch links are recorded here. |
-| Report concrete prompts, time/iteration counts, and agent-specific problems for both agents. | Incomplete. | This report records commands, validation outcomes, and the Kilo Code 403, but no contemporaneous elapsed-time/iteration log or complete prompt transcript was preserved. Kilo Code produced no response/results to report. |
+| 1. Analyze the application architecture and code. | Completed by both agents. | `ANALYSIS.md` in the Copilot checkout and `ANALYSIS_KODA.md` in the Koda checkout. |
+| 2. Recover numbered, source-supported functional requirements and ambiguities. | Completed by both agents. | Each analysis file documents requirements and source references. |
+| 3. Audit dependencies, fix compatibility defects, refactor, and verify the app. | Partially verified. | Copilot: Django checks, migration consistency, and 17 tests passed locally. Koda: 100 tests passed locally, migration consistency and formatting checks reported successful. Live Tinkoff integration and PostgreSQL/Redis/Celery operation remain unverified. |
+| 4. Implement and test one permitted new feature. | Completed by both agents, with stated limitations. | Copilot implemented price history. Koda implemented a virtual investment portfolio. Copilot's 17 tests and Koda's 100 tests passed in local runs. |
+| 5. Compare results from two agents. | Completed. | The agents implemented different features. Their analysis and reports, test results, and limitations are documented in their respective checkouts. Kilo Code's earlier HTTP 403 was a failed attempt; Koda was the successful second agent. |
+| 6. Use separate agent runs, copies, and branches. | Completed. | Copilot checkout/branch: `investing-copilot`, `agent/copilot`. Koda checkout/branch: `investing-koda`, `agent/koda`. The branches are committed and pushed to the fork. |
+| 7. Report prompts, iterations, elapsed time, and agent-specific problems. | Partially completed. | Agent reports record the main task, commands, test results, and blockers. Exact elapsed time and complete iteration histories were not preserved. Kilo Code's failed attempt is documented separately from Koda's successful work. |
