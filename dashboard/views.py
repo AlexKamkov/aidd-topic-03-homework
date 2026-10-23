@@ -1,11 +1,12 @@
-from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, ListView, View, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView, View
 
 from .forms import ShareModelForm
 from .models import Share
 from .services.graph import get_graph
-from django.contrib.auth.mixins import UserPassesTestMixin
 
 
 class IsUserAuthenticatedMixin(UserPassesTestMixin):
@@ -29,12 +30,18 @@ class ShareListView(ListView):
 class ShareDetailView(View):
     @staticmethod
     def get(request, pk):
-        share = Share.objects.get(id=pk)
+        share = get_object_or_404(Share, id=pk)
+        try:
+            days = int(request.GET.get("days", 180))
+        except ValueError:
+            return HttpResponseBadRequest("days must be an integer between 1 and 3650")
+        if not 1 <= days <= 3650:
+            return HttpResponseBadRequest("days must be an integer between 1 and 3650")
 
         return render(
             request,
             "dashboard/detail.html",
-            {"plot_div": get_graph(share), "share": share},
+            {"plot_div": get_graph(share, days=days), "share": share, "days": days},
         )
 
 

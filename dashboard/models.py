@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Share(models.Model):
@@ -19,3 +20,17 @@ class Share(models.Model):
     class Meta:
         verbose_name = "Акция"
         verbose_name_plural = "Акции"
+
+
+class PriceHistory(models.Model):
+    """A market price captured for a share."""
+
+    share = models.ForeignKey(
+        Share, on_delete=models.CASCADE, related_name="price_history"
+    )
+    price = models.DecimalField(max_digits=20, decimal_places=9)
+    recorded_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["recorded_at"]
+        indexes = [models.Index(fields=["share", "recorded_at"])]

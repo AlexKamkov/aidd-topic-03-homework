@@ -20,6 +20,16 @@
     <div class="col3"></div>
     <div class="col3">
     <h5>Исторические данные: </h5>
+    <form method="get" class="mb-3">
+        <label for="history-days">Период (дней):</label>
+        <select id="history-days" name="days" onchange="this.form.submit()">
+            <option value="7" {% if days == 7 %}selected{% endif %}>7</option>
+            <option value="30" {% if days == 30 %}selected{% endif %}>30</option>
+            <option value="90" {% if days == 90 %}selected{% endif %}>90</option>
+            <option value="180" {% if days == 180 %}selected{% endif %}>180</option>
+            <option value="365" {% if days == 365 %}selected{% endif %}>365</option>
+        </select>
+    </form>
  {% autoescape off %}
   {{ plot_div }}
   {% endautoescape %}

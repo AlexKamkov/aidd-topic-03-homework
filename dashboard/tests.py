@@ -1,8 +1,14 @@
+from datetime import timedelta
+from decimal import Decimal
+from unittest.mock import patch
+
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from dashboard.models import Share
+from dashboard.models import PriceHistory, Share
+from dashboard.tasks import update_last_price
 
 
 class DashboardTests(APITestCase):
@@ -120,3 +126,89 @@ class DashboardTests(APITestCase):
     def test_share_delete_invalid(self):
         response = self.client.delete("/api/v1/shares/3/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_price_history_returns_prices_and_period_change(self):
+        now = timezone.now()
+        PriceHistory.objects.create(
+            share=self.apple_share,
+            price=Decimal("100.500000000"),
+            recorded_at=now - timedelta(days=2),
+        )
+        PriceHistory.objects.create(
+            share=self.apple_share,
+            price=Decimal("110.000000000"),
+            recorded_at=now - timedelta(days=1),
+        )
+
+        response = self.client.get(
+            f"/api/v1/shares/{self.apple_share.id}/history/?days=30"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["prices"]), 2)
+        self.assertEqual(response.data["absolute_change"], Decimal("9.500000000"))
+        self.assertEqual(
+            response.data["percentage_change"],
+            Decimal("9.452736318407960199004975124"),
+        )
+
+    def test_price_history_rejects_invalid_period(self):
+        response = self.client.get(
+            f"/api/v1/shares/{self.apple_share.id}/history/?days=0"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_price_history_excludes_out_of_period_prices(self):
+        PriceHistory.objects.create(
+            share=self.apple_share,
+            price=Decimal("90"),
+            recorded_at=timezone.now() - timedelta(days=31),
+        )
+
+        response = self.client.get(
+            f"/api/v1/shares/{self.apple_share.id}/history/?days=30"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["prices"], [])
+        self.assertIsNone(response.data["absolute_change"])
+
+    @patch("dashboard.tasks.get_last_data")
+    def test_price_update_persists_exact_price_history(self, get_last_data):
+        get_last_data.return_value = (Decimal("100.123456789"), timezone.now())
+
+        update_last_price.run()
+
+        self.apple_share.refresh_from_db()
+        self.assertAlmostEqual(self.apple_share.last_price, 100.123456789)
+        self.assertEqual(
+            self.apple_share.price_history.get().price, Decimal("100.123456789")
+        )
+
+    def test_history_endpoint_returns_not_found_for_unknown_share(self):
+        response = self.client.get("/api/v1/shares/999/history/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_share_detail_displays_history_for_selected_period(self):
+        PriceHistory.objects.create(
+            share=self.apple_share,
+            price=Decimal("100"),
+            recorded_at=timezone.now() - timedelta(days=5),
+        )
+
+        response = self.client.get(
+            reverse("dashboard:detail", args=[self.apple_share.id]), {"days": 30}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.context["days"], 30)
+        self.assertContains(response, 'value="30" selected')
+
+    def test_share_detail_rejects_invalid_history_period(self):
+        response = self.client.get(
+            reverse("dashboard:detail", args=[self.apple_share.id]), {"days": "bad"}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
