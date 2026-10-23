@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Удаление портфеля</title>
+{% endblock %}
+
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        <p>Вы уверены, что хотите удалить портфель: <b>"{{ portfolio.name }}"</b>?
+           Все операции портфеля будут удалены.</p>
+        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">Удалить</button>
+        <a href="{% url 'dashboard:portfolio_list' %}" class="btn btn-sm btn-secondary">Отмена</a>
+    </form>
+{% endblock %}

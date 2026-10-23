@@ -10,13 +10,24 @@ class AuthView(View):
 
     @staticmethod
     def get(request):
-        return render(request, "user/auth.html", {"form": AuthForm})
+        # В контекст передаётся экземпляр формы, а не класс: иначе шаблон
+        # рендерит repr поля вместо <input>.
+        return render(request, "user/auth.html", {"form": AuthForm()})
 
     @staticmethod
     def post(request):
         form = AuthForm(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                "user/auth.html",
+                {"form": form, "error": "Введите корректный email и пароль."},
+            )
+
         user = authenticate(
-            request, username=form.data["email"].lower(), password=form.data["password"]
+            request,
+            username=form.cleaned_data["email"].lower(),
+            password=form.cleaned_data["password"],
         )
 
         if user is not None:
@@ -38,7 +49,19 @@ class RegistrationView(View):
 
     @staticmethod
     def get(request):
-        return render(request, "user/registration.html", {"form": RegistrationForm})
+        # В контекст передаётся экземпляр формы, а не класс.
+        return render(request, "user/registration.html", {"form": RegistrationForm()})
+
+    @staticmethod
+    def _first_error(form):
+        """Безопасно достаёт первую ошибку валидации формы."""
+        all_errors = form.errors.get("__all__", [])
+        if all_errors:
+            return all_errors[0]
+        for messages in form.errors.values():
+            if messages:
+                return messages[0]
+        return "Ошибка валидации формы."
 
     @staticmethod
     def post(request):
@@ -48,10 +71,12 @@ class RegistrationView(View):
             login(request, user)
             return redirect("dashboard:index")
         else:
+            # Исходный код обращался к form.errors["__all__"].data[0], что
+            # падало с KeyError, когда ошибка относилась к конкретному полю.
             return render(
                 request,
                 "user/registration.html",
-                {"form": form, "error": form.errors["__all__"].data[0].message},
+                {"form": form, "error": RegistrationView._first_error(form)},
             )
 
 

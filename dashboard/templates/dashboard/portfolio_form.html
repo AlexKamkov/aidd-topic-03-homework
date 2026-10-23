@@ -1,0 +1,25 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Портфель — форма</title>
+{% endblock %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+<div class="row">
+    <div class="col-4"></div>
+    <div class="col-4">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+                {{ field|as_crispy_field }}
+            {% endfor %}
+            <button class="w-100 btn btn-lg btn-primary mt-3" type="submit">Сохранить</button>
+        </form>
+    </div>
+    <div class="col-4"></div>
+</div>
+{% endblock %}

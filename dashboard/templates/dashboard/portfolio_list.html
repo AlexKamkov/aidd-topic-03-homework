@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>Мои портфели</title>
+{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Виртуальные инвестиционные портфели</h4>
+        <a href="{% url 'dashboard:portfolio_create' %}" class="btn btn-primary">Создать портфель</a>
+    </div>
+
+    {% if portfolios %}
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Название</th>
+                <th scope="col">Валюта</th>
+                <th scope="col">Начальный капитал</th>
+                <th scope="col">Создан</th>
+                <th scope="col">Управление</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for portfolio in portfolios %}
+                <tr>
+                    <td><a href="{% url 'dashboard:portfolio_detail' portfolio.id %}">{{ portfolio.name }}</a></td>
+                    <td>{{ portfolio.currency|upper }}</td>
+                    <td>{{ portfolio.initial_capital }}</td>
+                    <td>{{ portfolio.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'dashboard:portfolio_update' portfolio.id %}" class="btn btn-secondary">Редактировать</a>
+                        <a href="{% url 'dashboard:portfolio_delete' portfolio.id %}" class="btn btn-danger">Удалить</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У вас ещё нет портфелей. Создайте первый — и смоделируйте инвестиционные сделки.</p>
+    {% endif %}
+
+{% endblock %}

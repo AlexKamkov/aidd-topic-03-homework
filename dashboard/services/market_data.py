@@ -1,11 +1,9 @@
-from tinkoff.invest import Client
+"""
+Получение рыночных данных для акции.
 
-from config.settings import TINKOFF_TOKEN, logger
+Делегирует работу с Tinkoff API модулю ``tinkoff_client``. Если библиотека
+не установлена — возвращает синтетические данные (см. ``tinkoff_client``).
+"""
+from dashboard.services.tinkoff_client import get_last_data
 
-
-def get_last_data(share):
-    with Client(TINKOFF_TOKEN) as client:
-        resp = client.market_data.get_last_prices(figi=[share.figi])
-        resp = resp.last_prices.pop()
-        logger.info(f"Get last data for share with id {share.id}")
-        return [resp.price.units, resp.time]
+__all__ = ["get_last_data"]

@@ -1,23 +1,42 @@
 # investing
 
-# PostgreSQL (Docker)
-docker-compose -f docker-compose.yml up
+## Запуск
 
-# Tinkoff Invest API
-# TINKOFF_TOKEN указывается в config/settings.py
+```bash
+# Переменная окружения DB_ENGINE=sqlite позволяет запустить без PostgreSQL
+# (PostgreSQL по умолчанию, как в исходной версии)
+$env:DB_ENGINE="sqlite"
+$env:DJANGO_SECRET_KEY="your-secret-key"
 
-# Первоначальная загрузка списка акций
-python manage.py add_shares
+# Миграции
+python manage.py migrate
 
-# Celery Beat
-celery -A config beat
+# Запуск сервера
+python manage.py runserver
+```
 
-# Celery Worker
-celery -A config worker -l info
+## Тесты
 
-# Celery Worker для Windows (Eventlet)
-pip install eventlet cryptography
-celery -A config worker -l info -P eventlet
+```bash
+$env:DB_ENGINE="sqlite"
+python manage.py test dashboard
+```
 
-# API
-# /api/v1/shares — работа с акциями
+## Переменные окружения
+
+| Переменная | По умолчанию | Описание |
+|-----------|-------------|----------|
+| `DB_ENGINE` | `postgresql` | `postgresql` или `sqlite` |
+| `DJANGO_SECRET_KEY` | dev-ключ | Ключ подписи CSRF/сессий (нужен только при DEBUG=True) |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Через запятую |
+| `TINKOFF_TOKEN` | (пусто) | Токен Tinkoff Invest API. Если не задан, данные берутся из заглушки |
+| `CELERY_TASK_ALWAYS_EAGER` | `False` | Запускать Celery-задачи синхронно |
+| `CELERY_BROKER_URL` | `redis://127.0.0.1:6379/0` | URL брокера Celery |
+
+## Ограничения
+
+- Библиотеки `tinkoff` (0.1.1) и `tinkoff-investments` недоступны в PyPI. Приложение
+  использует детерминированную заглушку для получения котировок и графиков.
+- PostgreSQL для продакшена; SQLite по умолчанию для тестирования.
+- Celery требует Redis (или RabbitMQ) для реальной асинхронной обработки задач.
+

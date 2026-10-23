@@ -1,0 +1,173 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+    <title>{{ portfolio.name }} — Портфель</title>
+{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Портфель: {{ portfolio.name }}</h4>
+        <div>
+            <a href="{% url 'dashboard:portfolio_update' portfolio.id %}" class="btn btn-secondary btn-sm">Редактировать</a>
+            <a href="{% url 'dashboard:portfolio_transaction' portfolio.id %}" class="btn btn-success btn-sm">Сделка</a>
+        </div>
+    </div>
+
+    <!-- Сводная оценка -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Начальный капитал</h6>
+                    <p class="card-text fs-5">{{ valuation.portfolio.initial_capital }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Свободные средства</h6>
+                    <p class="card-text fs-5">{{ valuation.cash }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Стоимость позиций</h6>
+                    <p class="card-text fs-5">{{ valuation.market_value }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Итого</h6>
+                    <p class="card-text fs-5">{{ valuation.total_value }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Прибыль / убыток -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card {% if valuation.total_pl >= 0 %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Общая прибыль/убыток</h6>
+                    <p class="card-text fs-5">{{ valuation.total_pl }} {{ valuation.currency }}
+                        {% if valuation.total_pl_percent is not None %}
+                            ({{ valuation.total_pl_percent }}%)
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Реализованная P/L</h6>
+                    <p class="card-text fs-5">{{ valuation.realized_pl }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle text-muted">Нереализованная P/L</h6>
+                    <p class="card-text fs-5">{{ valuation.unrealized_pl }} {{ valuation.currency }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Позиции -->
+    {% if valuation.positions %}
+        <h5 class="mt-4">Позиции ({{ valuation.positions|length }})</h5>
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th>Тикер</th>
+                <th>Количество</th>
+                <th>Средняя цена</th>
+                <th>Рыночная цена</th>
+                <th>Стоимость позиции</th>
+                <th>Нереал. P/L</th>
+                <th>Данные</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for position in valuation.positions %}
+                <tr>
+                    <td><a href="{% url 'dashboard:detail' position.share.id %}">{{ position.share.ticker }}</a></td>
+                    <td>{{ position.quantity }}</td>
+                    <td>{{ position.average_price }}</td>
+                    <td>
+                        {% if position.market_price %}
+                            {{ position.market_price }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ position.market_value }}</td>
+                    <td>
+                        {% if position.unrealized_pl >= 0 %}
+                            <span class="text-success">{{ position.unrealized_pl }}</span>
+                        {% else %}
+                            <span class="text-danger">{{ position.unrealized_pl }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if position.has_market_price %}
+                            <span class="badge bg-success">есть</span>
+                        {% else %}
+                            <span class="badge bg-warning">нет</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">Позиций пока нет. Совершите первую покупку.</p>
+    {% endif %}
+
+    <!-- История операций -->
+    <h5 class="mt-4">История операций</h5>
+    {% if transactions %}
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Операция</th>
+                <th>Акция</th>
+                <th>Количество</th>
+                <th>Цена</th>
+                <th>Сумма</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for txn in transactions %}
+                <tr>
+                    <td>{{ txn.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        {% if txn.operation == "BUY" %}
+                            <span class="badge bg-success">Покупка</span>
+                        {% else %}
+                            <span class="badge bg-danger">Продажа</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ txn.share.ticker }}</td>
+                    <td>{{ txn.quantity }}</td>
+                    <td>{{ txn.price }}</td>
+                    <td>{{ txn.amount }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">Операций пока нет.</p>
+    {% endif %}
+
+{% endblock %}
